@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style></style>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <title>Test Task</title>
+  </head>
+  <body>
+    <div id="app">
+      <country-list></country-list>
+    </div>
+    <script>
+      Vue.component("country-list", {
+        template: `
+        <div class="container">
+          <input v-model="filter" placeholder="Фильтр по коду страны А2" @input="applyFilter" class="search-input" />
+          <table class="">
+            <thead>
+              <tr>
+                <th>Код А2</th>
+                <th>Код А3</th>
+                <th>Цифровой код</th>
+                <th>Страна</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="country in countries" :key="country.iso_3166_1_a2">
+                <td>{{ country.iso_3166_1_a2 }}</td>
+                <td>{{ country.iso_3166_1_a3 }}</td>
+                <td>{{ country.iso_3166_1_numeric }}</td>
+                <td>{{ country.printable_name }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <button @click="loadPage(rpag.previous_page_number)" :disabled="!rpag.has_previous" class="pagination-button" >Предыдущая</button>
+            <button @click="loadPage(rpag.next_page_number)" :disabled="!rpag.has_next" class="pagination-button" >Следующая</button>
+          </div>
+        </div>
+      `,
+        data() {
+          return {
+            filter: "",
+            countries: [],
+            rpag: {},
+            currentPage: 1,
+            ppItems: 10,
+          };
+        },
+        mounted() {
+          this.loadData();
+        },
+        methods: {
+          loadData() {
+            fetch("https://devops100.site/test/", {
+              method: "POST",
+              headers: {
+                accept: "*/*",
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                filters: {
+                  iso_3166_1_a2: this.filter,
+                },
+                paginate: {
+                  page: this.currentPage,
+                  pp_items: this.ppItems,
+                },
+              }),
+            })
+              .then((response) => response.json())
+              .then((data) => {
+                this.countries = data.page_data.data;
+                this.rpag = data.page_data.rpag;
+              })
+              .catch((error) => {
+                console.error(error);
+              });
+          },
+          applyFilter() {
+            this.currentPage = 1;
+            this.loadData();
+          },
+          loadPage(pageNumber) {
+            this.currentPage = pageNumber;
+            this.loadData();
+          },
+        },
+      });
+
+      new Vue({
+        el: "#app",
+      });
+    </script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,700;1,500&family=Roboto:wght@400;700&display=swap");
+
+      #app {
+        font-family: "Montserrat", sans-serif;
+        font-family: "Roboto", sans-serif;
+      }
+
+      .container {
+        max-width: 690px;
+        padding: 10px;
+      }
+
+      .search-input {
+        appearance: none;
+        border: none;
+        outline: none;
+        font-size: 14px;
+        border-bottom: 0.2em solid #000000;
+        padding: 0.4em;
+        color: #000000;
+        margin-bottom: 15px;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border: 1px solid black;
+        padding: 5px;
+        text-align: center;
+      }
+
+      .pagination {
+        display: flex;
+        justify-content: center;
+      }
+
+      .pagination-button {
+        font-family: "Montserrat", sans-serif;
+        font-family: "Roboto", sans-serif;
+        font-size: 14px;
+        background: none;
+        border-radius: 4px;
+        padding: 5px 15px;
+        background-color: none;
+        margin: 20px;
+        transition: .2s;
+      }
+
+      .pagination-button:hover {
+        transform: scale(1.1);
+      }
+    </style>
+  </body>
+</html>
+
+<!-- {
+  "form_errors": null, (поле для валидации формы)
+  "success_message": "Success", (успешное выполнение запроса)
+  "page_data": { (содержит данные для отображения на странице)
+    "data": [
+      {
+        "iso_3166_1_a2": "RU", (двухбуквенный код страны)
+        "iso_3166_1_a3": "RUS", (трёхбуквенный код страны)
+        "iso_3166_1_numeric": "643", (цифровой код страны)
+        "printable_name": "Russian Federation", (название страны)
+        "name": "", (возможно также название страны, но на другом языке или же на языке юзера)
+        "display_order": 0, (для drag'n'drop ранжировки)
+        "is_shipping_country": false (возможно ли доставка в страну)
+      }
+    ],
+    "rpag": {
+      "has_next": false, (есть ли следующая страница в списке)
+      "has_previous": false, (есть ли предыдущая страница в списке)
+      "has_other_pages": false, (есть ли другие страницы в списке)
+      "next_page_number": null, (номер следующей страницы)
+      "previous_page_number": null, (номер предыдущей страницы)
+      "start_index": 1, (индекс первого элемента на странице)
+      "end_index": 1, (индекс последнего элемента на странице)
+      "total_count": 249, (общее кол-во элементов в списке)
+      "selected_count": 1, (кол-во выбранных элементов с списке)
+      "pages": 1 (общее кол-во страниц в списке)
+    }
+  },
+  "redirect": "", (поле может содержать url для перенаправления юзера, после выполнения запроса)
+  "exc_stack": "", (стек исключений, если они появились во время запроса)
+  "debug": [], (отладочная информация (выполнение запроса или его параметры ))
+  "user_groups": "", (группа к которой принадлежит юзер)
+  "user_perms": "" (должен быть массив с разрешениями, которые имеет юзер)
+} -->
